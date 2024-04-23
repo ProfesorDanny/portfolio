@@ -1,3 +1,5 @@
+// automatiza un proceso de transformación de datos en Excel a traves de Power Query.
+
 let
     Origen = Excel.CurrentWorkbook(){[Name="Demo_PQ"]}[Content],
     #"Tipo cambiado" = Table.TransformColumnTypes(Origen,{{"Categoría", type text}, {"Monto", Int64.Type}}),
