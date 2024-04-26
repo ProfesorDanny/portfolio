@@ -1,0 +1,15 @@
+// automatiza un proceso de transformación de datos en Excel a traves de Power Query.
+let
+    Origen = Excel.CurrentWorkbook(){[Name="Demo_PQ"]}[Content],
+    #"Encabezados promovidos" = Table.PromoteHeaders(Origen, [PromoteAllScalars=true]),
+    #"Tipo cambiado" = Table.TransformColumnTypes(#"Encabezados promovidos",{{"invoice_and_item_number", type text}, {"date", type date}, {"store_number", Int64.Type}, {"store_name", type text}, {"address", type text}, {"city", type text}, {"zip_code", Int64.Type}, {"store_location", type text}, {"county_number", Int64.Type}, {"county", type text}, {"category", Int64.Type}, {"category_name", type text}, {"vendor_number", Int64.Type}, {"vendor_name", type text}, {"item_number", Int64.Type}, {"item_description", type text}, {"pack", Int64.Type}, {"bottle_volume_ml", Int64.Type}, {"state_bottle_cost", Int64.Type}, {"state_bottle_retail", Int64.Type}, {"bottles_sold", Int64.Type}, {"sale_dollars", Int64.Type}, {"volume_sold_liters", Int64.Type}, {"volume_sold_gallons", Int64.Type}}),
+    #"Otras columnas quitadas" = Table.SelectColumns(#"Tipo cambiado",{"date", "city", "sale_dollars"}),
+    #"Año insertado" = Table.AddColumn(#"Otras columnas quitadas", "Año", each Date.Year([date]), Int64.Type),
+    #"Columnas reordenadas" = Table.ReorderColumns(#"Año insertado",{"date", "Año", "city", "sale_dollars"}),
+    #"Mes extraído" = Table.TransformColumns(#"Columnas reordenadas",{{"date", Date.Month, Int64.Type}}),
+    #"Columnas con nombre cambiado" = Table.RenameColumns(#"Mes extraído",{{"date", "Mes"}}),
+    #"Columnas combinadas" = Table.CombineColumns(Table.TransformColumnTypes(#"Columnas con nombre cambiado", {{"Mes", type text}, {"Año", type text}}, "es-CL"),{"Mes", "Año"},Combiner.CombineTextByDelimiter("-", QuoteStyle.None),"Combinada"),
+    #"Filas agrupadas" = Table.Group(#"Columnas combinadas", {"Combinada", "city"}, {{"suma_sales", each List.Sum([sale_dollars]), type nullable number}}),
+    #"Tipo cambiado1" = Table.TransformColumnTypes(#"Filas agrupadas",{{"Combinada", type date}})
+in
+    #"Tipo cambiado1"
